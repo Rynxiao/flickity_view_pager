@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>flickity view pager</title>
+    <link href="//cdn.bootcss.com/flickity/1.1.1/flickity.min.css" rel="stylesheet">
+    <script src="//cdn.bootcss.com/flickity/1.1.1/flickity.pkgd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            background: #212121;
+            color: #fff;
+            font-size: 1em;
+            overflow: hidden;
+            position: relative;
+            overflow-y: scroll;
+            font-family: 'Montserrat', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .main-gallery {
+            width: 100vw;
+            height: 40vh;
+            opacity: 0;
+        	-webkit-touch-callout: none;
+        	-webkit-user-select: none;
+        	-khtml-user-select: none;
+        	-moz-user-select: none;
+        	-ms-user-select: none;
+        	user-select: none;
+        	transform: translate3d(0, 60vh, 0);
+        	transition: transform 0.5s, opacity 0.5s;
+        	transition-timing-function: cubic-bezier(0.6,0,0.4,1);
+        }
+        .gallery-cell {
+            width: 50%;
+            height: 100%;
+            min-width: 300px;
+            text-align: center;
+        }
+        .gallery-title {
+            font-size: 2.25em;
+            font-weight: 700;
+            margin: 60px 0 30px;
+            padding: 50px 40px 15px;
+            text-align: center;
+            display: block;
+            position: relative;
+            cursor: pointer;
+            color: #fff;
+        }
+        .gallery-item {
+            width: 100%;
+            padding: 0 5%;
+            box-sizing: border-box;
+            transition: transform 0.5s, opacity 0.5s;
+            transition-timing-function: cubic-bezier(0.6,0,0.4,1);
+        }
+        .gallery-item:first-of-type {
+            opacity: 0.25;
+            transform: translate3d(0,0,0);
+        }
+        .gallery-item img {
+            width: 100%;
+        }
+        .item-content {
+            position: relative;
+            z-index: 100;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .gallery-item:first-of-type .item-content::before,
+        .gallery-item:first-of-type .item-content::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            z-index: -1;
+            transition: transform 0.3s;
+            backface-visibility: hidden;
+        }
+        .gallery-item:first-of-type .item-content::before {
+            background: #b8b8b8;
+            transform: translate3d(0,-20px,0) scale3d(0.9,0.9,1);
+        }
+        .gallery-item:first-of-type .item-content::after {
+            background: #a7a7a7;
+            transform: translate3d(0,-10px,0) scale3d(0.95,0.95,1);
+        }
+        .view-init .main-gallery {
+        	opacity: 1;
+        }
+        .view-full .flickity-viewport {
+        	overflow: visible;
+        }
+        .move-items .main-gallery {
+            transform: translate3d(0,0,0);
+        }
+        .move-items .is-selected .gallery-item {
+        	opacity: 1;
+        }
+        .move-items .is-selected .gallery-item:first-of-type .item-content::after {
+        	transform: translate3d(0,0,0) scale3d(0.95,0.95,1);
+        }
+
+        .move-items .is-selected .gallery-item:first-of-type .item-content::before {
+        	transform: translate3d(0,0,0) scale3d(0.9,0.9,1);
+        }
+        .move-items .is-selected .gallery-item {
+        	transition-delay: 0.15s;
+        	transform: translate3d(0,0,0);
+        }
+        .move-items .is-selected .gallery-item:first-of-type {
+        	transition-delay: 0s;
+        }
+        .gallery-cell.stack-prev,
+        .gallery-cell.stack-next {
+        	transition: transform 0.5s, opacity 0.5s;
+        	transition-timing-function: cubic-bezier(0.6,0,0.4,1);
+        }
+        .move-items .gallery-cell.stack-prev,
+        .move-items .gallery-cell.stack-next {
+        	opacity: 0;
+        }
+        .move-items .gallery-cell.stack-prev {
+        	transform: translate3d(-70px, 65vh, 0);
+        }
+
+        .move-items .gallery-cell.stack-next {
+        	transform: translate3d(70px, 65vh, 0);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-gallery">
+        <div class="gallery-cell">
+            <h2 class="gallery-title">game</h2>
+            <div class="gallery-item">
+                <div class="item-content">
+                    <img src="1.jpg" alt="">
+                </div>
+            </div>
+        </div>
+        <div class="gallery-cell">
+            <h2 class="gallery-title">draw</h2>
+            <div class="gallery-item">
+                <div class="item-content">
+                    <img src="2.jpg" alt="">
+                </div>
+            </div>
+        </div>
+        <div class="gallery-cell">
+            <h2 class="gallery-title">sing</h2>
+            <div class="gallery-item">
+                <div class="item-content">
+                    <img src="3.jpg" alt="">
+                </div>
+            </div>
+        </div>
+    </div>
+    <script>
+        (function() {
+            var stacksWrapper = document.querySelector('.main-gallery');
+            var stacks = [].slice.call(stacksWrapper.children);
+            var bodyEl = document.body || window.document.documentElement;
+            var canOpen = true, canMoveHeroImage = true;
+            var flkty;
+
+            function init() {
+                flkty = new Flickity( stacksWrapper, {
+                    // options
+                    wrapAround: true,
+                    initialIndex: 2,
+                    setGallerySize: false,
+                    imagesLoaded: true,
+                    prevNextButtons: false,
+                    pageDots: false
+                });
+
+                // loading images...
+                imagesLoaded(stacksWrapper, function() {
+                    classie.add(bodyEl, 'view-init');
+                });
+
+                initEvents();
+            }
+
+            function initEvents() {
+                // Flickity events:
+                flkty.on('cellSelect', function() {
+                    canOpen = false;
+                    classie.remove(bodyEl, 'item-clickable');
+
+                    var prevStack = stacksWrapper.querySelector('.stack-prev'),
+                        nextStack = stacksWrapper.querySelector('.stack-next'),
+                        selidx = flkty.selectedIndex,
+                        cellsCount = flkty.cells.length,
+                        previdx = selidx > 0 ? selidx - 1 : cellsCount - 1;
+                        nextidx = selidx < cellsCount - 1 ? selidx + 1 : 0;
+
+                    if( prevStack ) {
+                        classie.remove(prevStack, 'stack-prev');
+                    }
+                    if( nextStack ) {
+                        classie.remove(nextStack, 'stack-next');
+                    }
+
+                    classie.add(stacks[previdx], 'stack-prev');
+                    classie.add(stacks[nextidx], 'stack-next');
+
+                });
+
+                flkty.on('dragStart', function() {
+                    canOpen = false;
+                    classie.remove(bodyEl, 'item-clickable');
+                });
+
+                flkty.on('settle', function() {
+                    classie.add(bodyEl, 'item-clickable');
+                    canOpen = true;
+                });
+
+                stacks.forEach(function(stack) {
+                    var titleEl = stack.querySelector(".gallery-title");
+
+                    titleEl.addEventListener('click', function(ev) {
+                        ev.preventDefault();
+                        if(classie.has(stack, 'is-selected')) {
+                            if(classie.has(bodyEl, 'view-full')) {
+                                classie.remove(bodyEl, 'move-items');
+                                classie.remove(bodyEl, 'view-full');
+								bodyEl.style.height = '';
+								flkty.bindDrag();
+								flkty.options.accessibility = true;
+								canMoveHeroImage = true;
+                            } else if(canOpen) {
+                                canMoveHeroImage = false;
+                                classie.add(bodyEl, 'view-full');
+                                setTimeout(function() {
+                                    classie.add(bodyEl, 'move-items');
+                                }, 25);
+                                bodyEl.style.height = stack.offsetHeight + 'px';
+                                flkty.unbindDrag();
+                                flkty.options.accessibility = false;
+                            }
+                        }
+                    });
+                });
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
